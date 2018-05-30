@@ -1,0 +1,568 @@
+☆☆☆☆☆☆☆☆☆☆☆☆☆☆
+☆                        ☆
+☆  Oracle Database 11g:  ☆
+☆  PL/SQL Fundamentals   ☆
+☆                        ☆
+☆☆☆☆☆☆☆☆☆☆☆☆☆☆
+
+*****
+ 실습환경 구성
+*****
+
+서버측 구성: 
+  Oracle Server머신 : 강사 PC:172.16.1.16
+                      강사가 Oracle 실습을 위한 환경을 구성하였음
+                      강의가 시작되기 전에 
+                      다음과 같은 절차에 따라
+                      Oracle Server 구성요소를 start 해 놓겠습니다
+
+                      -Oracle Server머신에 PUTTY등을 사용하여
+                       강사 PC:172.16.1.16 에 접속한 후
+                       
+                       1.리스너 구동
+                         $ lsnrctl start
+
+                       2.Oracle Database 구동
+
+                         $ sqlplus / as sysdba
+
+                         SQL> startup
+
+
+                       3.$ sqlplus / as sysdba
+
+
+                         SQL> SHOW USER
+                              USER is "SYS"
+
+                         SQL> SELECT username FROM DBA_USERS;
+
+                         SQL> clear screen
+
+                         SQL> ALTER USER user31 ACCOUNT LOCK;
+ 
+                         SQL> SELECT username, account_status 
+                              FROM dba_users
+                              WHERE  username = 'USER31'
+                              OR     username = 'ORA31';
+
+                              USERNAME                       ACCOUNT_STATUS
+                              ------------------------------ --------------------------------
+                              ORA31                          OPEN
+                              USER31                         LOCKED
+
+                         SQL> EXIT
+
+                         $ sqlplus user31/oracle
+
+
+                           ERROR:
+                           ORA-28000: the account is locked
+
+
+                           Enter user-name:
+                           ERROR:
+                           ORA-01017: invalid username/password; logon denied
+
+                         $ sqlplus / as sysdba
+
+
+                         SQL> ALTER USER user31 IDENTIFIED BY oracle
+                              ACCOUNT UNLOCK;
+
+
+                         SQL> SELECT username, account_status 
+                              FROM dba_users
+                              WHERE  username = 'USER31'
+                              OR     username = 'ORA31';
+
+
+                         SQL> exit
+
+                         $ sqlplus user31/oracle
+
+                         SQL> SELECT sysdate FROM dual;
+
+
+클라이언트 측 구성  : 여러분 각자의 PC(Windows)
+
+1.SQL*Plus 사용
+
+C:\Users\soldesk1T>SET PATH=D:\inst_sqdev_64bit\instantclient_11_2_64bit;%PATH%
+
+C:\Users\soldesk1T>sqlplus user31/oracle@172.16.1.16:1521/orcl.oraedu.com'
+
+SQL> 
+
+↓<-- 위 Step을 자동화하는 Batch file을 만들어서 사용하면 편하다
+
+SQL> exit
+
+
+C:\Users\soldesk1T>NOTEPAD user31.bat
+                   SET PATH=D:\inst_sqdev_64bit\instantclient_11_2_64bit;%PATH%
+                   sqlplus user31/oracle@172.16.1.16:1521/orcl.oraedu.com
+
+
+C:\Users\soldesk1T>user31
+                      
+SQL>
+
+2.SQL*Developer 사용
+
+  ...
+
+
+*강의장에서는 SQL*Plus를 사용하여 접속한다.
+
+C:\Users\soldesk1T>user31        
+  
+
+SQL> SELECT '우리나라' FROM dual;
+
+     '????????'
+     ------------------------
+     ????????
+
+
+SQL> EXIT
+
+C:\Users\soldesk1T>SET NLS_LANG=AMERICAN_AMERICA.KO16MSWIN949
+
+C:\Users\soldesk1T>sqlplus user31/oracle@172.16.1.16:1521/orcl.oraedu.com
+
+SQL> SELECT '대한민국' FROM dual;
+
+     '대한민국'
+     ------------------------
+     대한민국
+
+SQL> exit
+
+C:\Users\soldesk1T>notepad user31.bat
+                   SET PATH=D:\inst_sqdev_64bit\instantclient_11_2_64bit;%PATH%
+                   SET NLS_LANG=AMERICAN_AMERICA.KO16MSWIN949 
+                   sqlplus user31/oracle@172.16.1.16:1521/orcl.oraedu.com'
+
+
+C:\Users\soldesk1T>user31
+
+****************************
+ SQL 얼마나 알고 계십니까?
+****************************
+
+SQL> SELECT hiredate, empno, ename FROM emp;
+
+SQL> SELECT hiredate AS 입사일자, empno AS 사원번호 , ename AS 사원번호 FROM emp;
+
+
+SQL> l
+  1* SELECT hiredate  입사일자, empno 사원번호 , ename  사원번호 FROM emp
+
+
+SQL> ed
+Wrote file afiedt.buf
+
+  1* SELECT hiredate  "입사 일자", empno 사원번호 , ename  사원번호 FROM emp
+SQL> /
+
+
+SQL> SELECT ename, sal, comm, sal + comm FROM emp;
+
+
+
+SQL> ed
+Wrote file afiedt.buf
+
+  1  SELECT ename, sal, comm, sal + NVL(comm,0) AS "월급"
+  2* FROM emp
+
+SQL> /
+
+*COMMIT / ROLLBACK ?
+
+-명시적 COMMIT
+
+----Session 1                 | Session 2
+C:\Users\soldesk1T>USER31
+                              | C:\Users\soldesk1T>user31
+                          
+SQL> CREATE TABLE xop
+     AS
+     SELECT empno, ename, sal, deptno FROM emp;
+
+                              | SQL> SELECT * FROM xop;
+
+
+SQL> SELECT * FROM xop WHERE empno = 7788;
+
+     EMPNO ENAME                       SAL     DEPTNO
+---------- -------------------- ---------- ----------
+      7788 SCOTT                      3000         20
+
+SQL> UPDATE xop SET sal = 7000 WHERE empno = 7788;
+
+     1 row updated.
+
+SQL> SELECT * FROM xop WHERE empno = 7788;
+
+     EMPNO ENAME                       SAL     DEPTNO
+---------- -------------------- ---------- ----------
+      7788 SCOTT                      7000         20
+
+                        | SQL> SELECT * FROM xop WHERE empno = 7788;
+
+                               EMPNO ENAME                       SAL     DEPTNO
+                          ---------- -------------------- ---------- ----------
+                                7788 SCOTT                      3000         20
+
+SQL> COMMIT;
+
+                        | SQL> SELECT * FROM xop WHERE empno = 7788;
+
+                               EMPNO ENAME                       SAL     DEPTNO
+                          ---------- -------------------- ---------- ----------
+                                7788 SCOTT                      7000         20
+
+
+
+-암시적 COMMIT-Semantic Error로 실폐하는 경우
+
+SQL> SELECT * FROM xop;
+
+     14 rows selected.
+
+                        | SQL> SELECT * FROM xop;
+
+                               14 rows selected.
+
+SQL> DELETE FROM xop WHERE deptno = 20;
+
+     5 rows deleted.
+
+SQL> SELECT * FROM xop;
+
+     9 rows selected.
+
+                        | SQL> SELECT * FROM xop;
+
+                               14 rows selected.
+
+SQL> CREATE TABLE emp (col1 NUMBER);
+     ERROR at line 1:
+     ORA-00955: name is already used by an existing object
+
+                           | SQL> SELECT * FROM xop;
+
+                                  9 rows selected.
+
+
+****************************
+ Oracle PL/SQL
+****************************
+1.PL/SQL: PL/SQL (Procedural Language/Structured Query Language)
+
+        3GL                  +           SQL
+        -----                            ---------
+        -변수                            한방으로 수백억건의 Row
+        -제어문
+        -반복문
+
+  -ADA ---> PASCAL ----> PL/SQL
+
+  -Block 구조의 언어
+
+2.Block의 Type
+
+  Anonymous Block      : Oracle Server에 이름을가지고 저장이 되지 않는다
+  Named (Stored) Block : Oracle Server에 이름을가지고 Compile되어서
+  -Procedure             저장된다
+  -Function
+  -Package
+  -Trigger
+
+*.Why ?
+ ~SELECT sal + NVL(comm,0) FROM emp WHERE empno = 7788;
+
+  ↓
+
+  SELECT sal + NVL(comm,0) INTO 변수명
+  FROM emp WHERE empno = 7788;
+
+  
+  SELECT empno, ename, sal INTO 변수명1, 변수명2, 변수명3
+  FROM emp WHERE empno = 7788;
+
+ ~INSERT문을 값을 바꿔가면서 100만건을 실행
+
+  FOR i IN 1 .. 1000000 LOOP
+      INSERT INTO ...
+  END LOOP;
+
+3,Anonymous Block의 구조
+
+  DECLARE    -- 옵션
+   -선언부:변수, 커서, 사용자정의 Data type .. 선언부
+  BEGIN      -- 필수
+   -실헹부:선언부에서 선언된 것들을 사용해 실제로 실행
+  EXCEPTION  -- 옵션
+   -예외처리부
+  END;       -- 필수
+  /
+
+4.과정
+  FUNDMANTALS : Anonymous block
+  Develop     : Stored block
+
+
+5.무작정 따라하기
+  
+  -Hello World!
+
+
+  C:\Users\soldesk1T>user31
+
+******************
+ Anonumous Block
+******************
+
+*Anonymous Block 1 : 'Hello World!'
+
+
+  SQL> BEGIN
+         DBMS_OUTPUT.PUT_LINE('Hello World!');
+       END;
+       /
+
+       PL/SQL procedure successfully completed.
+
+
+  SQL> SET SERVEROUTPUT ON
+
+  SQL> LIST
+       BEGIN
+        DBMS_OUTPUT.PUT_LINE('Hello World!');
+       END;
+       /
+       Hello World!
+
+       PL/SQL procedure successfully completed.
+
+
+*Anonymous Block 2 : 'Hello World!' + SELECT ename FROM emp 
+                                      WHERE  empno = 7788;
+
+
+  int v_a;  -- X
+
+  SQL> DECLARE
+         v_ename   VARCHAR2(10);
+       BEGIN
+         DBMS_OUTPUT.PUT_LINE('Hello World!');
+         SELECT ename INTO  v_ename
+         FROM   emp
+         WHERE  empno = 7788;
+
+         DBMS_OUTPUT.PUT_LINE(v_ename);
+       END;
+       /
+
+  SQL> SELECT ename || job FROM emp;
+
+  SQL> SELECT ename || ' ' || job AS email FROM emp;
+
+
+  SQL> DECLARE
+         v_ename   VARCHAR2(10);
+       BEGIN
+         DBMS_OUTPUT.PUT_LINE('Hello World!');
+         SELECT ename INTO  v_ename
+         FROM   emp
+         WHERE  empno = 7788;
+
+         DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+       END;
+       /
+
+       Hello World!
+       사원명:SCOTT
+
+       PL/SQL procedure successfully completed.
+
+*Anonymous Block 3 : 문제
+
+ SQL> SELECT empno, ename, sal, comm , sal + comm 
+      FROM emp WHERE empno = 7788;
+
+
+ SQL> SELECT empno, ename, sal, comm , sal + NVL(comm , 0)
+      FROM emp WHERE empno = 7788;
+
+      EMPNO ENAME                       SAL       COMM   SAL+COMM
+      ----- -------------------- ---------- ---------- ----------
+       7788 SCOTT                      3000
+
+      사원번호:7788
+      사 원 명:SCOTT
+      급    여:3000
+      커 미 션:
+      월 급 여:3000
+
+      DECLARE
+        v_empno  NUMBER(4);
+        v_ename  VARCHAR2(10);
+        v_sal    NUMBER(7,2);
+        v_comm   NUMBER(7,2);
+        v_tsal   NUMBER(7,2);
+      BEGIN
+        SELECT empno, ename, sal, comm , sal + NVL(comm , 0)
+        INTO   v_empno, v_ename, v_sal, v_comm, v_tsal
+        FROM emp WHERE empno = 7788;
+
+        DBMS_OUTPUT.PUT_LINE('사원번호:' || v_empno);
+        DBMS_OUTPUT.PUT_LINE('사 원 명:'||v_ename);
+        DBMS_OUTPUT.PUT_LINE('급    여:' || v_sal);
+        DBMS_OUTPUT.PUT_LINE('커 미 션:' || v_comm);
+        DBMS_OUTPUT.PUT_LINE('월 급 여:' || v_tsal);
+      END;
+      /
+
+     -테이블이 생성되고 난 후에 테이블의 구조가 변경될 수 있다.
+
+     SQL> DROP TABLE xop PURGE;
+
+     SQL> CREATE TABLE xop
+          AS
+          SELECT empno, ename, sal FROM emp;
+
+          Table created.
+     
+
+    SQL> ALTER TABLE xop MODIFY(ename VARCHAR2(20));
+
+
+      DECLARE
+        v_empno  emp.empno%TYPE;
+        v_ename  emp.ename%TYPE;
+        v_sal    emp.sal%TYPE;
+        v_comm   emp.comm%TYPE;
+        v_tsal   NUMBER(7,2);
+      BEGIN
+        SELECT empno, ename, sal, comm , sal + NVL(comm , 0)
+        INTO   v_empno, v_ename, v_sal, v_comm, v_tsal
+        FROM emp WHERE empno = 7788;
+
+        DBMS_OUTPUT.PUT_LINE('사원번호:' || v_empno);
+        DBMS_OUTPUT.PUT_LINE('사 원 명:'||v_ename);
+        DBMS_OUTPUT.PUT_LINE('급    여:' || v_sal);
+        DBMS_OUTPUT.PUT_LINE('커 미 션:' || v_comm);
+        DBMS_OUTPUT.PUT_LINE('월 급 여:' || v_tsal);
+      END;
+      /
+
+      사원번호:7788
+      사 원 명:SCOTT
+      급    여:3000
+      커 미 션:
+      월 급 여:3000
+
+      PL/SQL procedure successfully completed.
+
+
+*Procedure PROC1
+
+
+ -Compile -> Store
+
+  SQL> CREATE OR REPLACE PROCEDURE proc1
+       AS
+         v_ename   VARCHAR2(10)
+       BEGIN
+         DBMS_OUTPUT.PUT_LINE('Hello World!');
+         SELECT ename INTO  v_ename
+         FROM   emp
+         WHERE  empno = 7788;
+
+         DBMS_OUTPUT.PUT_LINE(v_ename);
+       END;
+       /
+
+       Procedure created.
+
+       --> Error : show errors
+
+-Source Code 확인
+SQL> SELECT text FROM user_source
+  2  WHERE  name = 'PROC1';
+
+TEXT
+---------------------------------------------------
+PROCEDURE proc1
+       AS
+         v_ename   VARCHAR2(10);
+       BEGIN
+         DBMS_OUTPUT.PUT_LINE('Hello World!');
+         SELECT ename INTO  v_ename
+         FROM   emp
+         WHERE  empno = 7788;
+         DBMS_OUTPUT.PUT_LINE(v_ename);
+       END;
+
+10 rows selected.
+
+-사용법
+
+SQL> DESC proc1
+
+-실행방법1
+SQL> EXECUTE proc1
+Hello World!
+SCOTT
+
+PL/SQL procedure successfully completed.
+
+SQL> EXEC proc1
+Hello World!
+SCOTT
+
+PL/SQL procedure successfully completed.
+
+
+
+
+-실행방법2
+
+SQL> BEGIN
+  2    proc1;
+  3  END;
+  4  /
+Hello World!
+SCOTT
+
+PL/SQL procedure successfully completed.
+
+
+--다음을 Named block변경 -- proc2
+
+      DECLARE
+        v_empno  emp.empno%TYPE;
+        v_ename  emp.ename%TYPE;
+        v_sal    emp.sal%TYPE;
+        v_comm   emp.comm%TYPE;
+        v_tsal   NUMBER(7,2);
+      BEGIN
+        SELECT empno, ename, sal, comm , sal + NVL(comm , 0)
+        INTO   v_empno, v_ename, v_sal, v_comm, v_tsal
+        FROM emp WHERE empno = 7788;
+
+        DBMS_OUTPUT.PUT_LINE('사원번호:' || v_empno);
+        DBMS_OUTPUT.PUT_LINE('사 원 명:'||v_ename);
+        DBMS_OUTPUT.PUT_LINE('급    여:' || v_sal);
+        DBMS_OUTPUT.PUT_LINE('커 미 션:' || v_comm);
+        DBMS_OUTPUT.PUT_LINE('월 급 여:' || v_tsal);
+      END;
+      /
+
+
+
+
