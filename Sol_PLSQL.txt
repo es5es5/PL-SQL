@@ -14,7 +14,7 @@
                       강사가 Oracle 실습을 위한 환경을 구성하였음
                       강의가 시작되기 전에 
                       다음과 같은 절차에 따라
-                      Oracle Server 구성요소를 start 해 놓겠습니다
+                      Oracle Server 구성요소를 start해 놓겠습니다
 
                       -Oracle Server머신에 PUTTY등을 사용하여
                        강사 PC:172.16.1.16 에 접속한 후
@@ -29,7 +29,7 @@
                          SQL> startup
 
 
-                       3.$ sqlplus / as sysdba
+                       *.$ sqlplus / as sysdba
 
 
                          SQL> SHOW USER
@@ -147,6 +147,7 @@ C:\Users\soldesk1T>notepad user31.bat
 
 C:\Users\soldesk1T>user31
 
+
 ****************************
  SQL 얼마나 알고 계십니까?
 ****************************
@@ -178,6 +179,7 @@ Wrote file afiedt.buf
   2* FROM emp
 
 SQL> /
+
 
 *COMMIT / ROLLBACK ?
 
@@ -260,6 +262,7 @@ SQL> CREATE TABLE emp (col1 NUMBER);
 ****************************
  Oracle PL/SQL
 ****************************
+
 1.PL/SQL: PL/SQL (Procedural Language/Structured Query Language)
 
         3GL                  +           SQL
@@ -471,7 +474,6 @@ SQL> CREATE TABLE emp (col1 NUMBER);
 
 *Procedure PROC1
 
-
  -Compile -> Store
 
   SQL> CREATE OR REPLACE PROCEDURE proc1
@@ -491,13 +493,14 @@ SQL> CREATE TABLE emp (col1 NUMBER);
 
        --> Error : show errors
 
--Source Code 확인
-SQL> SELECT text FROM user_source
-  2  WHERE  name = 'PROC1';
+ -Source Code 확인
+ 
+  SQL> SELECT text FROM user_source
+       WHERE  name = 'PROC1';
 
-TEXT
----------------------------------------------------
-PROCEDURE proc1
+       TEXT
+       ---------------------------------------------------
+       PROCEDURE proc1
        AS
          v_ename   VARCHAR2(10);
        BEGIN
@@ -508,43 +511,46 @@ PROCEDURE proc1
          DBMS_OUTPUT.PUT_LINE(v_ename);
        END;
 
-10 rows selected.
+       10 rows selected.
 
--사용법
+ -사용법
 
-SQL> DESC proc1
+  SQL> DESC proc1
 
--실행방법1
-SQL> EXECUTE proc1
-Hello World!
-SCOTT
+ -실행방법1
+  SQL> EXECUTE proc1
+       Hello World!
+       SCOTT
 
-PL/SQL procedure successfully completed.
+       PL/SQL procedure successfully completed.
 
-SQL> EXEC proc1
-Hello World!
-SCOTT
+  SQL> EXEC proc1
+       Hello World!
+       SCOTT
 
-PL/SQL procedure successfully completed.
+  PL/SQL procedure successfully completed.
 
 
 
 
 -실행방법2
+  
+  SQL> BEGIN
+         proc1;
+       END;
+       /
+       Hello World!
+       SCOTT
 
-SQL> BEGIN
-  2    proc1;
-  3  END;
-  4  /
-Hello World!
-SCOTT
-
-PL/SQL procedure successfully completed.
+       PL/SQL procedure successfully completed.
 
 
---다음을 Named block변경 -- proc2
+--다음을 Named block 으로 변경 -- proc2
 
-      DECLARE
+     -Compile ---> Store
+
+      CREATE OR REPLACE PROCEDURE proc2
+      AS
         v_empno  emp.empno%TYPE;
         v_ename  emp.ename%TYPE;
         v_sal    emp.sal%TYPE;
@@ -562,6 +568,1754 @@ PL/SQL procedure successfully completed.
         DBMS_OUTPUT.PUT_LINE('월 급 여:' || v_tsal);
       END;
       /
+
+   -Source code확인
+    SQL> SET PAGESIZE 40
+
+    SQL> SELECT text FROM user_source
+         WHERE  name = 'PROC2';
+
+         TEXT
+         --------------------------------------------------------
+         PROCEDURE proc2
+         AS
+          v_empno  emp.empno%TYPE;
+          v_ename  emp.ename%TYPE;
+          v_sal    emp.sal%TYPE;
+          v_comm   emp.comm%TYPE;
+          v_tsal   NUMBER(7,2);
+        BEGIN
+          SELECT empno, ename, sal, comm , sal + NVL(comm , 0)
+          INTO   v_empno, v_ename, v_sal, v_comm, v_tsal
+          FROM emp WHERE empno = 7788;
+
+          DBMS_OUTPUT.PUT_LINE('사원번호:' || v_empno);
+          DBMS_OUTPUT.PUT_LINE('사 원 명:'||v_ename);
+          DBMS_OUTPUT.PUT_LINE('급    여:' || v_sal);
+          DBMS_OUTPUT.PUT_LINE('커 미 션:' || v_comm);
+          DBMS_OUTPUT.PUT_LINE('월 급 여:' || v_tsal);
+        END;
+
+        18 rows selected.
+
+
+   -구조확인
+
+   SQL> DESC proc2
+        PROCEDURE proc2
+
+   -실행
+
+
+   SQL> EXECUTE proc2
+        사원번호:7788
+        사 원 명:SCOTT
+        급    여:3000
+        커 미 션:
+        월 급 여:3000
+
+        PL/SQL procedure successfully completed.
+
+   SQL> EXEC proc2
+        사원번호:7788
+        사 원 명:SCOTT
+        급    여:3000
+        커 미 션:
+        월 급 여:3000
+
+        PL/SQL procedure successfully completed.
+
+  SQL> BEGIN
+         proc2;
+       END;
+       /
+       사원번호:7788
+       사 원 명:SCOTT
+       급    여:3000
+       커 미 션:
+       월 급 여:3000
+
+       PL/SQL procedure successfully completed.
+
+*Function func1
+ -급여를 제공시 해당 급여대한 세금을 Return하는 Function func1
+
+  SQL> ed
+       Wrote file afiedt.buf
+
+       CREATE OR REPLACE FUNCTION func1(p_sal NUMBER)
+                RETURN NUMBER
+       AS
+           v_tax NUMBER(9,7);
+       BEGIN
+           v_tax := p_sal * 0.0038;  -- := 는 대입연산자
+           RETURN v_tax;
+       END;
+  SQL> /
+
+       Function created.
+
+
+  SQL> SELECT func1(3000) FROM dual;
+
+       FUNC1(3000)
+       -----------
+              11.4
+
+
+*Procedure PROC3
+ 사원번호 제공시 해당사원의 사원명, 직책, 급여표시
+
+ -Compile --> Store
+
+ CREATE OR REPLACE PROCEDURE proc3(p_empno  NUMBER)
+ IS
+   v_ename  emp.ename%TYPE;
+   v_job    emp.job%TYPE;
+   v_sal    emp.sal%TYPE;
+ BEGIN
+   SELECT ename, job, sal INTO v_ename, v_job, v_sal
+   FROM   emp
+   WHERE  empno = p_empno;
+
+   DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+   DBMS_OUTPUT.PUT_LINE('직  책:' || v_job);
+   DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+
+ END;
+ /
+
+ -구조확인(사용법)
+
+ SQL> DESC proc3
+      PROCEDURE proc3
+       Argument Name                  Type                    In/Out Default?
+      ------------------------------ ----------------------- ------ --------
+      P_EMPNO                        NUMBER                  IN
+
+
+ -호출방법1 : SQL*Plus명령:EXECUTE를 사용
+
+              SQL> EXECUTE proc3(7788)
+
+   SQL> EXECUTE proc3(7788)
+        사원명:SCOTT
+        직  책:ANALYST
+        급  여:3000
+
+        PL/SQL procedure successfully completed.
+
+
+ -호출방법2 : 또 다른 PL/BLOCK 사용 사용
+
+  SQL> BEGIN
+         proc3(7566);
+       END;
+       /
+       사원명:JONES
+       직  책:MANAGER
+       급  여:2975
+
+       PL/SQL procedure successfully completed.
+
+
+
+*Package 생성
+
+ CREATE OR REPLACE PROCEDURE proc1
+ AS
+   v_ename   VARCHAR2(10);
+ BEGIN
+   DBMS_OUTPUT.PUT_LINE('Hello World!');
+   SELECT ename INTO  v_ename
+   FROM   emp
+   WHERE  empno = 7788;
+
+   DBMS_OUTPUT.PUT_LINE(v_ename);
+ END;
+ /
+
+
+ CREATE OR REPLACE PROCEDURE proc3(p_empno  NUMBER)
+ IS
+   v_ename  emp.ename%TYPE;
+   v_job    emp.job%TYPE;
+   v_sal    emp.sal%TYPE;
+ BEGIN
+   SELECT ename, job, sal INTO v_ename, v_job, v_sal
+   FROM   emp
+   WHERE  empno = p_empno;
+
+   DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+   DBMS_OUTPUT.PUT_LINE('직  책:' || v_job);
+   DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+
+ END;
+ /
+
+ CREATE OR REPLACE FUNCTION func1(p_sal NUMBER)
+        RETURN NUMBER
+ AS
+    v_tax NUMBER(9,7);
+ BEGIN
+    v_tax := p_sal * 0.0038;  -- := 는 대입연산자
+    RETURN v_tax;
+ END;
+ /
+
+
+
+ Package Specification(Package Spec) - 필수
+ Package Body                        - 옵션
+
+ ~이전에 작성되었던 PROC1, PROC3, FUNC1 Package 로 변환
+
+ *Package Spec.을  생성
+
+ CREATE OR REPLACE PACKAGE pkg1
+ IS
+   PROCEDURE proc1;
+   PROCEDURE proc3(p_empno  NUMBER);
+   FUNCTION func1(p_sal NUMBER)
+        RETURN NUMBER;
+ END;
+ /
+ 
+ Package created.
+
+
+ *Package Body 을  생성
+
+
+ CREATE OR REPLACE PACKAGE BODY pkg1
+ IS
+    PROCEDURE proc1
+    AS
+      v_ename   VARCHAR2(10);
+    BEGIN
+      DBMS_OUTPUT.PUT_LINE('Hello World!');
+      SELECT ename INTO  v_ename
+      FROM   emp
+      WHERE  empno = 7788;
+
+      DBMS_OUTPUT.PUT_LINE(v_ename);
+    END proc1;
+
+    PROCEDURE proc3(p_empno  NUMBER)
+    IS
+      v_ename  emp.ename%TYPE;
+      v_job    emp.job%TYPE;
+      v_sal    emp.sal%TYPE;
+    BEGIN
+      SELECT ename, job, sal INTO v_ename, v_job, v_sal
+      FROM   emp
+      WHERE  empno = p_empno;
+
+      DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+      DBMS_OUTPUT.PUT_LINE('직  책:' || v_job);
+      DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+
+    END proc3;
+
+    FUNCTION func1(p_sal NUMBER)
+          RETURN NUMBER
+    AS
+        v_tax NUMBER(9,7);
+    BEGIN
+       v_tax := p_sal * 0.0038;  -- := 는 대입연산자
+       RETURN v_tax;
+    END func1;
+
+ END pkg1;
+ /
+
+ Package body created.
+
+SQL> EXEC pkg1.proc1
+Hello World!
+SCOTT
+
+PL/SQL procedure successfully completed.
+
+SQL> EXEC pkg1.proc3(7566)
+사원명:JONES
+직  책:MANAGER
+급  여:2975
+
+PL/SQL procedure successfully completed.
+
+
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 1 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+# 1-10
+
+  BEGIN
+    NULL;
+  END;
+  /
+
+
+ -실행부와 에외처리부에는 한개이상의 Block이 포함될 수 있다
+  DECLARE
+  BEGIN
+    NULL;
+    DECLARE
+    BEGIN
+      NULL;    
+    END;
+    
+  EXCEPTION
+    WHEN OTHERS THEN
+      BEGIN
+        NULL;
+      END;
+  END;
+  /
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 2 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+# 2-7
+  
+  DECLARE
+    v_a  NUMBER := 100;
+    v_b  NUMBER DEFAULT 200;
+    v_c  NUMBER := 300;
+  BEGIN
+    v_a := v_a * 3.14;
+    v_b := v_b * 3.14;
+    v_c := v_c * 3.14;
+
+    DBMS_OUTPUT.PUT_LINE(v_a);
+    DBMS_OUTPUT.PUT_LINE(v_b);
+    DBMS_OUTPUT.PUT_LINE(v_c);
+  END;
+  /
+  ↓
+
+  
+  DECLARE
+    v_a  NUMBER := 100;
+    v_b  NUMBER DEFAULT 200;
+    v_c  NUMBER := 300;
+
+    c_pi CONSTANT NUMBER := 3.141592;
+  BEGIN
+    c_pi := 500;    //
+    v_a := v_a * c_pi;
+    v_b := v_b * c_pi;
+    v_c := v_c * c_pi;
+
+    DBMS_OUTPUT.PUT_LINE(v_a);
+    DBMS_OUTPUT.PUT_LINE(v_b);
+    DBMS_OUTPUT.PUT_LINE(v_c);
+  END;
+  /
+
+  PLS-00363: expression 'C_PI' cannot be used as an assignment target
+
+
+  DECLARE
+    v_a  NUMBER := 100;
+    v_b  NUMBER DEFAULT 200;
+    v_c  NUMBER := 300;
+
+    c_pi CONSTANT NUMBER := 3.141592;
+  BEGIN
+    v_a := v_a * c_pi;
+    v_b := v_b * c_pi;
+    v_c := v_c * c_pi;
+
+    DBMS_OUTPUT.PUT_LINE(v_a);
+    DBMS_OUTPUT.PUT_LINE(v_b);
+    DBMS_OUTPUT.PUT_LINE(v_c);
+  END;
+  /
+
+# 2-9
+  
+  Message
+  ---------------
+  7369,'SMITH'
+  7499,'ALLEN'
+
+
+ 리터럴:문자:'KBS', 'kbs'
+        숫자:123, 1234.45
+        날짜:'24-DEC-18'
+
+
+ SQL> SELECT empno ||',' || ename FROM emp
+
+
+ SQL> SELECT empno ||','' || ename FROM emp
+
+      ORA-01756: quoted string not properly terminated
+
+ ↓
+
+ SQL> SELECT empno ||',''' || ename 
+      FROM emp;
+
+
+ ↓
+
+ SQL> SELECT empno ||',''' || ename || '''' AS "Message"
+      FROM emp;
+
+
+ SQL> SELECT empno || q'[,']' || ename  FROM emp;
+                        !  !
+                        <  >
+                        {  }
+                        (  )
+
+
+ SQL> SELECT empno || q'!,'!' || ename  FROM emp;
+
+ SQL> SELECT empno ||q'[,']' || ename || q'[']' AS "Message"
+      FROM emp;
+
+# 2-29
+  PL/SQL 변수         : PL/SQL block의 선언부에서 선언된 변수
+
+  Bind 변수(Host 변수): 호줄환경에서 선언하는 변수
+
+
+  DECLARE
+    v_empno  NUMBER := 7788;
+    v_ename  emp.ename%TYPE;
+  BEGIN
+    SELECT ename INTO v_ename
+    FROM   emp
+    WHERE  empno = v_empno;
+
+    DBMS_OUTPUT.PUT_LINE(v_ename);
+  END;
+  /
+
+  SQL> VARIABLE b_ename  VARCHAR2(20)   --- Bind 변수(Host 변수)
+
+
+  DECLARE
+    v_empno  NUMBER := 7788;
+  BEGIN
+    SELECT ename INTO :b_ename
+    FROM   emp
+    WHERE  empno = v_empno;
+  END;
+  /
+
+  PL/SQL procedure successfully completed.
+
+  SQL> PRINT b_ename
+
+       B_ENAME
+       -------------------------
+       SCOTT
+
+
+
+  
+
+  
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 3 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+
+# 3-8
+  SQL> SELECT LOWER(ename), UPPER(ename) FROM emp;
+
+ *Sigle Row Function : Row당 한개의 결과
+  문자:LOWER, UPPER, INICAP, SUBSTR, REPLACE, ...
+  숫자:ROUND, TRUNC, MOD, CEIL, FLOOR
+  날짜:SYSDATE, MONTHS_BETWEEN
+  기타:DECODE
+
+  SQL> SELECT CEIL(123.12), FLOOR(123.12) FROM dual;
+
+  Single Row Function은 
+  PL/SQL block내에서 SQL및 절차적 코드에서 사용가능
+
+
+ *Group Function : Row의 Group 당 한개의 결과를 Return
+  Group Function 과 DECODE 는
+  PL/SQL block내에서 SQL에서만 사용가능하고
+  절차적 코드에서는 사용불가
+
+
+  
+  SQL> SELECT CEIL(123.12), FLOOR(123.12) FROM dual;
+
+  DECLARE
+    v_ename emp.ename%TYPE;
+  BEGIN
+    SELECT LOWER(ename) INTO v_ename
+    FROM   emp
+    WHERE  empno =  7788;
+
+    DBMS_OUTPUT.PUT_LINE(v_ename);
+
+    v_ename := INITCAP(v_ename);
+
+    DBMS_OUTPUT.PUT_LINE(v_ename);
+
+  END;
+  /
+   
+
+  DECLARE
+    v_sum NUMBER(12,3);
+    
+  BEGIN
+    SELECT AVG(sal) INTO v_sum
+    FROM emp;
+
+
+    DBMS_OUTPUT.PUT_LINE(v_sum);
+
+    v_sum := DECODE('kbs', 'kbs', 1, 0);
+
+  END;
+  /
+
+  PLS-00204: function or pseudo-column 'DECODE' may be used inside a SQL
+
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 4 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+# 4-2
+  QL  :SELECT 
+
+  DML :INSERT, UPDATE, DELETE, MERGER
+  
+  TCL :COMMIT, ROLLBACK, SAVEPOINT
+ 
+  DDL :CREATE, ALTER, TRUNCATE
+
+  DCL :GRANT, REVOKE
+
+  
+  BEGIN
+    SELECT -- OK
+    DML    -- OK
+    TCL    -- OK
+    DDL    -- X
+    DCL    -- X
+  END;
+
+
+
+  BEGIN
+     CREATE TABLE a1(col1 NUMBER);
+  END;
+  /
+
+
+  PLS-00103: Encountered the symbol "CREATE" 
+             when expecting one of the following:
+
+  ↓ --- Dynamic SQL
+
+
+  BEGIN
+    EXECUTE IMMEDIATE 'CREATE TABLE a1(col1 NUMBER)';
+  END;
+  /
+
+
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE a1 PURGE';
+  END;
+  /
+
+# 4-5
+  SQL> DROP TABLE xop PURGE;
+
+  SQL> CREATE TABLE xop
+       AS
+       SELECT  * FROM emp;
+
+       Table created.
+
+  DECLARE
+    v_ename xop.ename%TYPE;
+    v_sal   xop.sal%TYPE;
+  BEGIN
+    SELECT ename, sal INTO v_ename, v_sal
+    FROM   xop
+    WHERE  empno = 7566;
+
+    DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+
+    DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+  END;
+  /
+  사원명:JONES
+  급  여:2975
+
+  PL/SQL procedure successfully completed.
+
+  DECLARE
+    v_ename xop.ename%TYPE;
+    v_sal   xop.sal%TYPE;
+  BEGIN
+    SELECT ename, sal INTO v_ename, v_sal
+    FROM   xop
+    WHERE  deptno  = 20;
+    --AND    rownum  = 1;
+
+    DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+
+    DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+  END;
+  /
+
+  *
+  ERROR at line 1:
+  ORA-01422: exact fetch returns more than requested number of rows
+  ORA-06512: at line 5
+
+
+  DECLARE
+    v_ename xop.ename%TYPE;
+    v_sal   xop.sal%TYPE;
+  BEGIN
+    SELECT ename, sal INTO v_ename, v_sal
+    FROM   xop
+    WHERE  empno = 9999;
+
+    DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+
+    DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+  END;
+  /
+
+  ERROR at line 1:
+  ORA-01403: no data found
+  ORA-06512: at line 5
+
+  
+  DECLARE
+    v_empno xop.empno%TYPE := &eno;
+    v_ename xop.ename%TYPE;
+    v_sal   xop.sal%TYPE;
+  BEGIN
+    SELECT ename, sal INTO v_ename, v_sal
+    FROM   xop
+    WHERE  empno = v_empno;
+
+    DBMS_OUTPUT.PUT_LINE('사원명:' || v_ename);
+
+    DBMS_OUTPUT.PUT_LINE('급  여:' || v_sal);
+  EXCEPTION
+    WHEN OTHERS THEN
+         NULL;
+  END;
+  /
+
+ -DML의 경우 여러건이 영향을 받거나
+  어떤 ROW도 영향을 받지 않을지라도 Error x
+
+  BEGIN
+    DELETE xop WHERE deptno = 10;
+  END;
+  /
+
+  PL/SQL procedure successfully completed.
+
+  SQL> SELECT COUNT(*) FROM xop;
+
+  COUNT(*)
+----------
+        11
+
+  SQL> ROLLBACK;
+
+  BEGIN
+    DELETE xop WHERE deptno = 90;
+  END;
+  /
+
+  ↓<-- 몇개 Row가 영향을 받았는지 ? 
+
+  DECLARE
+    v_rst  NUMBER;
+  BEGIN
+    DELETE xop WHERE deptno = 30;
+    v_rst := SQL%ROWCOUNT;
+   
+    DBMS_OUTPUT.PUT_LINE(v_rst || ' rows deleted.');
+  END;
+  /
+
+  6 rows deleted.
+
+  PL/SQL procedure successfully completed.
+
+
+ -커서(Cursor) - 암시적 커서 , 명시적 커서
+
+# 4-14
+  MERGE Statements
+
+  DROP TABLE emp_s PURGE;
+  DROP TABLE emp_t  PURGE;
+
+  CREATE  TABLE emp_s
+   ( no      NUMBER,
+     name  VARCHAR2(5),
+     sal      NUMBER);
+
+  INSERT INTO emp_s VALUES(100, 'AA', 600);
+  INSERT INTO emp_s VALUES(200, 'B', 20);  
+  INSERT INTO emp_s VALUES(400, 'D', 40);
+  INSERT INTO emp_s VALUES(500, 'E', 50);
+
+  COMMIT;
+
+
+  CREATE  TABLE emp_t
+   ( no      NUMBER,
+     name  VARCHAR2(5),
+     sal      NUMBER);
+
+  INSERT INTO emp_t  VALUES(100, 'A', 10);
+  INSERT INTO emp_t  VALUES(200, 'B',  20);
+  INSERT INTO emp_t  VALUES(300, 'C',  30);
+
+  COMMIT;
+
+
+
+  MERGE INTO  emp_t t
+        USING emp_s s
+        ON (s.no = t.no)
+  WHEN MATCHED THEN
+       UPDATE  SET t.name = s.name, 
+                   t.sal  = s.sal
+  WHEN NOT MATCHED THEN
+       INSERT  VALUES(s.no, s.name, s.sal);
+
+
+  4 rows merged.
+
+  SQL> SELECT * FROM emp_t;
+
+        NO NAME              SAL
+---------- ---------- ----------
+       100 AA                600
+       200 B                  20
+       300 C                  30
+       400 D                  40
+       500 E                  50
+
+  SQL> ROLLBACK;
+
+  SQL> SELECT * FROM emp_t;
+
+        NO NAME              SAL
+---------- ---------- ----------
+       100 A                  10
+       200 B                  20
+       300 C                  30
+
+  SQL> SELECT * FROM emp_s;
+
+        NO NAME              SAL
+---------- ---------- ----------
+       100 AA                600
+       200 B                  20
+       400 D                  40
+       500 E                  50
+
+  SQL> INSERT INTO emp_s VALUES(100, 'KBS', 9000);
+
+       1 row created.
+
+  SQL> COMMIT;
+
+       Commit complete.
+
+
+SQL> MERGE INTO  emp_t t
+             USING emp_s s
+             ON (s.no = t.no)
+       WHEN MATCHED THEN
+            UPDATE  SET t.name = s.name,
+                        t.sal  = s.sal
+       WHEN NOT MATCHED THEN
+            INSERT  VALUES(s.no, s.name, s.sal);
+
+      ERROR at line 1:
+ORA-30926: unable to get a stable set of rows in the source tables
+
+
+
+MERGE INTO  emp_t t
+             USING emp_s s
+             ON (s.no = t.no)
+       WHEN MATCHED THEN
+            UPDATE  SET t.name = s.name,
+                        t.sal  = s.sal
+            	    WHERE s.name = 'KBS'
+       WHEN NOT MATCHED THEN
+            INSERT  VALUES(s.no, s.name, s.sal);
+
+  
+3 rows merged.
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 5 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+-IF
+ ~IF 조건 THEN
+          문장;
+  END IF;
+
+
+ ~IF 조건 THEN
+          문장1;
+  ELSE 문장2;
+  END IF;
+
+ ~IF 조건1 THEN 
+           문장1;
+  ELSIF 조건2 THEN
+              문장2;
+  ELSIF 조건3 THEN
+              문장3;
+  ELSE
+        문장n;
+  END IF;
+
+  SQL> SET VERIFY OFF
+
+  DECLARE
+    v_jum  NUMBER := &sc;
+    v_rst  VARCHAR2(10);
+  BEGIN
+    IF v_jum >= 90 THEN
+                   v_rst := '수';
+    ELSIF v_jum >= 80 THEN
+                   v_rst := '우';
+    ELSIF v_jum >= 70 THEN
+                   v_rst := '미';
+    ELSE
+        v_rst := '가';
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(v_rst);
+  END;
+  /
+
+
+-CASE
+
+-반복문
+
+  ~Basic LOOP
+
+   DECLARE
+     v NUMBER := 0;
+   BEGIN
+     LOOP
+       v := v + 1;
+       DBMS_OUTPUT.PUT_LINE(v);
+
+       EXIT WHEN v = 5;
+     END LOOP;
+   END;
+   /
+
+
+  ~While LOOP
+
+   DECLARE
+     v NUMBER := 0;
+   BEGIN
+     WHILE v <  5 LOOP
+       v := v + 1;
+       DBMS_OUTPUT.PUT_LINE(v);
+     END LOOP;
+   END;
+   /
+
+
+  ~FOR  LOOP
+
+   BEGIN
+     FOR v IN 1 .. 5 LOOP
+       DBMS_OUTPUT.PUT_LINE(V);
+     END LOOP;
+   END;
+   /
+     
+    암시적으로 선언되므로 인덱스 v는 선언하지 않는다,
+
+  ~숙제
+
+   1
+   2
+   3
+   5
+   7
+   9
+  10
+
+  -Basic Loop
+   
+   DECLARE
+     i  NUMBER := 0;
+   BEGIN
+     LOOP
+       i := i + 1;
+       IF i NOT IN (4,6,8) THEN
+          DBMS_OUTPUT.PUT_LINE(i);
+       END IF;
+       EXIT WHEN i = 10;
+     END LOOP;
+   END;
+   /
+
+   
+   DECLARE
+     i  NUMBER := 0;
+   BEGIN
+     LOOP
+       i := i + 1;
+       IF i  != 4 AND i != 6 AND i !=8  THEN
+          DBMS_OUTPUT.PUT_LINE(i);
+       END IF;
+       EXIT WHEN i = 10;
+     END LOOP;
+   END;
+   /
+
+
+  -While Loop
+
+   DECLARE
+     i NUMBER := 0;
+   BEGIN
+     WHILE I < 10 LOOP
+       i := i + 1;
+       IF i NOT IN (4,6,8) THEN
+          DBMS_OUTPUT.PUT_LINE(i);
+       END IF;
+     END LOOP;
+
+
+   END;
+   /
+
+
+  -For
+
+   BEGIN
+     FOR i  IN 1 .. 10 LOOP
+         IF i NOT IN (4, 6, 8) THEN
+            DBMS_OUTPUT.PUT_LINE(i);
+         END IF;
+     END LOOP;
+   END;
+   /
+
+
+
+   BEGIN
+     FOR i  IN REVERSE 1 .. 10 LOOP
+         IF i NOT IN (4, 6, 8) THEN
+            DBMS_OUTPUT.PUT_LINE(i);
+         END IF;
+     END LOOP;
+   END;
+   /
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 6 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+# 6-11
+  SQL> DROP TABLE xop PURGE;
+
+  SQL> CREATE TABLE xop
+       AS
+       SELECT empno, ename, sal, hiredate
+       FROM   emp;
+
+       Table created.
+
+
+  SQL> ALTER TABLE xop ADD(deptno NUMBER(4));'
+
+ 
+  SQL> UPDATE xop o SET deptno = (SELECT deptno
+                                  FROM   emp
+                                  WHERE  o.empno = empno);
+
+
+  문> 부서번호 10 번 부서의 평균 급여보다 더 많은 급여를 받는 사원?
+
+
+      SELECT *
+      FROM   emp
+      WHERE  sal > (SELECT AVG(sal)
+                    FROM   emp
+                    WHERE  deptno = 10)
+
+
+  문> 자신이 속한 부서의 평균 급여보다 더 많은 급여를 받는 사원?
+
+
+      SELECT *
+      FROM   emp o
+      WHERE  sal > (SELECT AVG(sal)
+                    FROM   emp
+                    WHERE  deptno = o.deptno)
+
+
+
+  SQL> ALTER TABLE xop ADD (dname  VARCHAR2(14));
+
+
+  문> XOP 테이블의 DNAME 컬럼값을 각 사원이 속한 부서명으로 UPDATE
+
+  SQL>UPDATE xop o SET dname = (SELECT dname
+                                 FROM   dept
+                                  WHERE  o.deptno = deptno);
+
+  문> 다음 XOP 테이블을 사용하여 사원번호 7788사원에 대해 
+      다음처럼 표시 하는 익명블럭을 작성하세요
+
+      사원번호 : 7788
+      사원명   : XXXXXXX
+      입사일자 : XXXX-XXX-XXX
+
+
+      
+  SQL> CREATE TABLE xop
+       AS
+       SELECT empno, ename, hiredate
+       FROM   emp;
+
+       Table created.
+
+
+         
+  DECLARE
+    v_xop_rec  xop%ROWTYPE;
+  BEGIN
+    SELECT * INTO v_xop_rec
+    FROM   xop
+    WHERE  empno = 7788;
+
+    DBMS_OUTPUT.PUT_LINE('사원번호 :' || v_xop_rec.empno);
+    DBMS_OUTPUT.PUT_LINE('사원명   :' || v_xop_rec.ename);
+    DBMS_OUTPUT.PUT_LINE('입사일자 :' || v_xop_rec.hiredate);
+  END;
+  /
+
+
+  사원번호 :7788
+  사원명   :SCOTT
+  입사일자 :09-DEC-82
+
+  PL/SQL procedure successfully completed.
+
+
+  (1).Scalar 값을 저장하는 select
+
+      SELECT job FROM emp WHERE empno = 7788;
+
+
+      DECLARE
+        v_empno  emp.empno%TYPE := 7788;  
+        v_job    emp.job%TYPE;
+      BEGIN
+        SELECT job into v_job
+        FROM emp
+        WHERE empno = v_empno;
+
+        DBMS_OUTPUT.PUT_LINE('Job:' || v_job);
+
+      END;
+      /
+
+      Job:ANALYST
+
+      PL/SQL procedure successfully completed.
+
+
+
+
+
+
+  (2).한 행 전체를 return하는 select! -PL/SQL record 사용1
+      -사원번호 하나를 입력받아 해당 사원의 row를 출력
+ 
+       SELECT * FROM emp WHERE empno = 7788; 
+
+
+      v_emprec
+      +-----------------------------------------------+
+      |     |     |     |     |     |     |     |     |
+      +-----------------------------------------------+
+       empno ename job    mgr  hired sal   comm  deptno
+
+
+      DECLARE
+        v_empno  emp.empno%TYPE := 7788;  
+        v_emprec  emp%ROWTYPE;
+      BEGIN
+        SELECT * into v_emprec 
+        FROM emp 
+        WHERE empno = v_empno;
+
+        DBMS_OUTPUT.PUT_LINE('사번:' || v_emprec.empno ||
+                             ' 이름:' || v_emprec.ename || 
+                             ' 부서번호:' || v_emprec.deptno);
+      END;
+      /
+
+      사번:7788 이름:SCOTT 부서번호:20
+
+      PL/SQL procedure successfully completed.
+
+
+  (3).행 하나의 몇개 column을 선별해서 select!  -PL/SQL record 사용2
+
+     -사용자 정의 Record
+
+      SELECT ename, job, sal , deptno 
+      FROM emp
+      WHERE empno = 7788;
+
+     EMP_REC
+      +----+----+----+----+
+      |    |    |    |    |
+      +----+----+----+----+
+        ↑             ↑
+       v_ename         v_deptno
+
+      DECLARE
+        TYPE emp_rec_type IS RECORD
+         (v_ename   emp.ename%TYPE,
+          v_job     emp.job%TYPE,
+          v_sal     emp.sal%TYPE,
+          v_deptno  emp.deptno%TYPE);
+
+        emp_rec   emp_rec_type;
+      BEGIN
+        SELECT ename, job, sal , deptno 
+        INTO emp_rec
+        FROM emp
+        WHERE  empno = 7788;
+
+        DBMS_OUTPUT.PUT_LINE(emp_rec.v_ename || ' ' ||
+                             emp_rec.v_job || ' ' ||
+                             emp_rec.v_sal || ' ' ||
+                             emp_rec.v_deptno);
+      END;
+      /
+
+      SCOTT ANALYST 3000 20
+
+      PL/SQL procedure successfully completed.
+
+
+
+  (4).한 컬럼의 여러 row의 값을 리턴하는 select! - INDEX BY Table -1
+     -부서번호를 제공했을때 해당 부서에 근무하는 사원들의 sal를 return
+
+     EMP_SAL
+       +----+
+   (1) |    |
+       +----+
+       |    |
+       +----+
+       |    |
+       +----+
+       |    |
+       +----+
+
+
+       SELECT sal 
+       FROM emp
+       WHERE deptno = 30;
+
+       DECLARE
+          TYPE emp_sal_type IS TABLE OF emp.sal%TYPE
+               INDEX BY PLS_INTEGER;
+
+          emp_sal    emp_sal_type;
+       BEGIN
+          SELECT sal BULK COLLECT INTO emp_sal
+          FROM   emp
+          WHERE deptno = 30;
+
+          FOR i IN emp_sal.FIRST .. emp_sal.LAST LOOP
+                   DBMS_OUTPUT.PUT_LINE(emp_sal(i));
+          END LOOP;
+       END;
+       /
+
+
+
+  (5).여러행, 전체 컬럼을 리턴하는 Select! - INDEX BY table - 2
+      -부서번호를 제공했을때 해당 부서에 근무하는 사원들의 row전체를 return
+  
+       SELECT * FROM emp WHERE deptno = 20;
+
+ 
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+       |     |     |     |     |     |     |     |     |
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+       |     |     |     |     |     |     |     |     |
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+       |     |     |     |     |     |     |     |     |
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+       |     |     |     |     |     |     |     |     |
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+       |     |     |     |     |     |     |     |     |
+       +-----+-----+-----+-----+-----+-----+-----+-----+
+         
+
+       DECLARE
+         TYPE emp_table_type IS TABLE OF emp%ROWTYPE
+              INDEX BY PLS_INTEGER;
+
+         emp_table    emp_table_type;
+       BEGIN
+         SELECT *  BULK COLLECT INTO emp_table
+         FROM emp 
+         WHERE deptno = 20;
+
+         FOR i IN emp_table.FIRST .. emp_table.LAST LOOP
+             DBMS_OUTPUT.PUT_LINE(emp_table(i).empno || ' ' ||
+                                  emp_table(i).ename || ' ' ||
+                                  emp_table(i).job || ' ' ||
+                                  emp_table(i).mgr|| ' ' ||
+                                  emp_table(i).hiredate || ' ' ||
+                                  emp_table(i).sal || ' ' ||
+                                  emp_table(i).comm|| ' ' ||
+                                  emp_table(i).deptno);
+         END LOOP;
+       END;
+       /
+
+   
+
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 7 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+
+# 명시적 Cursor 사용법
+
+  Cursor 와 Record
+  Cursor FOR Loops, 
+  Subquery를 사용하는 Cursor FOR Loops
+
+ -커서 사용법1 : 명시적 커서와 Scalar 변수 사용
+
+  DECLARE
+    CURSOR emp_cur IS
+           SELECT empno, ename, sal
+           FROM   emp
+           WHERE  deptno = 20;
+  
+    v_empno   emp.empno%TYPE;
+    v_ename   emp.ename%TYPE;
+    v_sal     emp.sal%TYPE;
+
+  BEGIN
+    OPEN emp_cur;
+
+    FETCH emp_cur INTO v_empno, v_ename, v_sal;
+
+    DBMS_OUTPUT.PUT_LINE(v_empno || ' ' ||
+                         v_ename || ' ' ||
+                         v_sal);
+    CLOSE emp_cur;
+  END;
+  /
+
+  7369 SMITH 800
+
+  PL/SQL procedure successfully completed.
+
+
+ -커서 사용법2 : 명시적 커서와 반복문
+
+  DECLARE
+    CURSOR emp_cur IS
+           SELECT empno, ename, sal
+           FROM   emp
+           WHERE  deptno = 20;
+  
+    v_empno   emp.empno%TYPE;
+    v_ename   emp.ename%TYPE;
+    v_sal     emp.sal%TYPE;
+
+  BEGIN
+    OPEN emp_cur;
+
+    LOOP
+       FETCH emp_cur INTO v_empno, v_ename, v_sal;
+
+       EXIT WHEN emp_cur%NOTFOUND;
+
+       DBMS_OUTPUT.PUT_LINE(v_empno || ' ' ||
+                            v_ename || ' ' ||
+                            v_sal);
+    END LOOP;
+    CLOSE emp_cur;
+  END;
+  /
+
+  7369 SMITH 800
+  7566 JONES 2975
+  7788 SCOTT 3000
+  7876 ADAMS 1100
+  7902 FORD 3000
+
+  PL/SQL procedure successfully completed.
+
+
+ -커서 사용법3 : 명시적 커서와 Cursor Record 변수 사용
+
+
+  EMP_CUR_REC
+  +----+-----+------+
+  |    |     |      |
+  +----+-----+------+
+
+  DECLARE
+    CURSOR emp_cur IS
+           SELECT empno, ename, sal
+           FROM   emp
+           WHERE  deptno = 20;
+  
+    emp_cur_rec  emp_cur%ROWTYPE;
+
+  BEGIN
+    OPEN emp_cur;
+
+    LOOP
+       FETCH emp_cur INTO emp_cur_rec;
+
+       EXIT WHEN emp_cur%NOTFOUND;
+
+       DBMS_OUTPUT.PUT_LINE(emp_cur_rec.empno || ' ' ||
+                            emp_cur_rec.ename || ' ' ||
+                            emp_cur_rec.sal);
+    END LOOP;
+    CLOSE emp_cur;
+  END;
+  /
+
+  7369 SMITH 800
+  7566 JONES 2975
+  7788 SCOTT 3000
+  7876 ADAMS 1100
+  7902 FORD 3000
+
+  PL/SQL procedure successfully completed.
+
+  -선언부:Cursor 선언
+
+          Cursor Record 변수 선언
+          ^^^^^^^^^^^^^^^^^^^^^^^
+
+   실행부:OPEN  ---> FETCH ---> 끝? -----> CLOSE
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  
+   
+ -커서 사용법4 : 명시적 커서와 Cursor FOR LOOP
+
+
+  DECLARE
+    CURSOR emp_cur IS
+           SELECT empno, ename, sal
+           FROM   emp
+           WHERE  deptno = 20;
+  
+
+  BEGIN
+    FOR emp_cur_rec IN emp_cur 	LOOP
+       DBMS_OUTPUT.PUT_LINE(emp_cur_rec.empno || ' ' ||
+                            emp_cur_rec.ename || ' ' ||
+                            emp_cur_rec.sal);
+    END LOOP;
+  END;
+  /
+
+
+  7369 SMITH 800
+  7566 JONES 2975
+  7788 SCOTT 3000
+  7876 ADAMS 1100
+  7902 FORD 3000
+
+  PL/SQL procedure successfully completed.
+
+
+ -커서 사용법5 : 명시적 커서 대신에 Cursor For Loop에 서브쿼리
+
+
+
+  BEGIN
+    FOR emp_cur_rec IN (SELECT empno, ename, sal
+                        FROM   emp
+                        WHERE  deptno = 20) LOOP
+       DBMS_OUTPUT.PUT_LINE(emp_cur_rec.empno || ' ' ||
+                            emp_cur_rec.ename || ' ' ||
+                            emp_cur_rec.sal);
+    END LOOP;
+  END;
+  /
+
+  7369 SMITH 800
+  7566 JONES 2975
+  7788 SCOTT 3000
+  7876 ADAMS 1100
+  7902 FORD 3000
+
+  PL/SQL procedure successfully completed.
+
+
+
+  ↓<-- 두건만 처리하고 끝? 
+
+
+  DECLARE
+    CURSOR emp_cur IS
+           SELECT empno, ename, sal
+           FROM   emp
+           WHERE  deptno = 20;
+  
+
+  BEGIN
+    FOR emp_cur_rec IN emp_cur 	LOOP
+       DBMS_OUTPUT.PUT_LINE(emp_cur_rec.empno || ' ' ||
+                            emp_cur_rec.ename || ' ' ||
+                            emp_cur_rec.sal);
+
+       EXIT WHEN emp_cur%ROWCOUNT = 2;
+    END LOOP;
+  END;
+  /
+
+  7369 SMITH 800
+  7566 JONES 2975
+
+  PL/SQL procedure successfully completed.
+
+# 7-24
+
+      DECLARE
+        CURSOR emp_cursor1 IS
+               SELECT empno, ename, sal 
+               FROM   emp
+               WHERE  deptno = 10
+               ORDER BY 1;
+
+        emp_record1 emp_cursor1%ROWTYPE;
+
+        CURSOR emp_cursor2 IS
+               SELECT empno, ename, sal 
+               FROM  emp
+               WHERE deptno = 20
+               ORDER BY 2;
+
+        emp_record2 emp_cursor2%ROWTYPE;
+
+      BEGIN
+        DBMS_OUTPUT.PUT_LINE(CHR(10)|| '첫번째....');
+
+        OPEN emp_cursor1;
+
+        LOOP 
+           FETCH emp_cursor1 INTO emp_record1;
+           EXIT WHEN emp_cursor1%NOTFOUND;
+           dbms_output.put_line(emp_record1.empno || ' ' || 
+                                emp_record1.ename || ' ' || 
+                                emp_record1.sal);
+        END LOOP;
+
+        CLOSE emp_cursor1;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10)|| '두번째....');
+
+        OPEN emp_cursor2;
+
+        LOOP 
+           FETCH emp_cursor2 INTO emp_record2;
+           EXIT WHEN emp_cursor2%NOTFOUND;
+           DBMS_OUTPUT.PUT_LINE(emp_record2.empno || ' ' || 
+                                emp_record2.ename || ' ' || 
+                                emp_record2.sal);
+        END LOOP;
+        CLOSE emp_cursor2;
+
+      END;
+      /
+
+      ↓
+
+      DECLARE
+        CURSOR emp_cursor1(p_deptno NUMBER, p_pos NUMBER) IS
+               SELECT empno, ename, sal 
+               FROM   emp
+               WHERE  deptno = p_deptno
+               ORDER BY p_pos;
+
+        emp_record1 emp_cursor1%ROWTYPE;
+
+
+      BEGIN
+        DBMS_OUTPUT.PUT_LINE(CHR(10)|| '첫번째....');
+
+        OPEN emp_cursor1(10, 1);
+
+        LOOP 
+           FETCH emp_cursor1 INTO emp_record1;
+           EXIT WHEN emp_cursor1%NOTFOUND;
+           dbms_output.put_line(emp_record1.empno || ' ' || 
+                                emp_record1.ename || ' ' || 
+                                emp_record1.sal);
+        END LOOP;
+
+        CLOSE emp_cursor1;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10)|| '두번째....');
+
+        OPEN emp_cursor1(20,2);
+
+        LOOP 
+           FETCH emp_cursor1 INTO emp_record1;
+           EXIT WHEN emp_cursor1%NOTFOUND;
+           DBMS_OUTPUT.PUT_LINE(emp_record1.empno || ' ' || 
+                                emp_record1.ename || ' ' || 
+                                emp_record1.sal);
+        END LOOP;
+        CLOSE emp_cursor1;
+
+      END;
+      /
+
+
+
+# 7-27
+  SQL> DROP TABLE xop PURGE;
+
+  SQL> CREATE TABLE xop
+        AS
+       SELECT empno, ename, sal, deptno
+       FROM   emp;
+
+       Table created.
+
+
+  SQL> ALTER TABLE xop ADD(stars VARCHAR2(51));
+
+  SQL> COL ename FOR a12
+
+  SQL> COL stars FOR a51
+
+  SQL> SET LINESIZE 130
+
+  SQL> L
+  1* SELECT * FROM xop
+  SQL> /
+
+
+  -Sesssion 1                       | Session 2
+  SQL> CREATE TABLE xop2
+       AS
+       SELECT * FROM xop;
+
+       Table created.
+
+                                    | C:\Users\soldesk1T>user31
+                                    | SQL> SELECT * FROM xop;
+
+
+  SQL> SELECT * FROM xop WHERE deptno = 20; 
+ 
+                                    | SQL> UPDATE xop SET sal = 200;
+                                           14 rows updated.
+
+  SQL> UPDATE xop SET stars = LPAD(' ', TRUNC(sal/100) + 1, '*') WHERE deptno = 20;
+       Wait ~~
+
+                                    | SQL> COMMIT;
+
+                                           Commit complete.
+       5 rows updated.
+
+
+  SQL> SELECT * FROM xop WHERE deptno = 20;
+
+     EMPNO ENAME               SAL     DEPTNO STARS
+---------- ------------ ---------- ---------- ---------------------------------------------------
+      7369 SMITH               200         20 **
+      7566 JONES               200         20 **
+      7788 SCOTT               200         20 **
+      7876 ADAMS               200         20 **
+      7902 FORD                200         20 **
+
+
+  SQL> COMMIT;
+
+  SQL> DROP TABLE xop PURGE;
+
+  SQL> ALTER TABLE xop2 RENAME TO xop;
+
+  SQL> SELECT * FROM xop WHERE deptno = 20 FOR UPDATE;
+
+                                    | SQL> UPDATE xop SET sal = 200;
+                                           Wait ~~~~
+
+
+  SQL> UPDATE xop SET stars = LPAD(' ', TRUNC(sal/100) + 1, '*') 
+       WHERE deptno = 20;
+     
+       5 rows updated.
+
+
+  SQL> SELECT * FROM xop WHERE deptno = 20;
+
+     EMPNO ENAME               SAL     DEPTNO STARS
+---------- ------------ ---------- ---------- ---------------------------------------------------
+      7369 SMITH               800         20 ********
+      7566 JONES              2975         20 *****************************
+      7788 SCOTT              3000         20 ******************************
+      7876 ADAMS              1100         20 ***********
+      7902 FORD               3000         20 ******************************
+
+
+  SQL> COMMIT;
+
+                              | 14 rows updated.
+
+♠♠♠♠♠♠♠♠♠
+♠              ♠
+♠ F1  제 8 장  ♠
+♠              ♠
+♠♠♠♠♠♠♠♠♠
+
+SQL> DROP TABLE t1 PURGE;
+DROP TABLE t1 PURGE
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+
+SQL> CREATE TABLE t1 (col1 NUMBER);
+
+Table created.
+
+
+--Exception의 전파 기능이 어떻게 활용될 수 있는가?
+
+
+  DROP TABLE t1 PURGE;
+  CREATE TABLE t1(a NUMBER);
+
+
+  BEGIN
+    INSERT INTO t1 VALUES(1000);
+    DBMS_OUTPUT.PUT_LINE(100/0);
+    INSERT INTO t1 VALUES(1000);
+  END;
+  /
+
+  ORA-01476: divisor is equal to zero
+
+  SQL> SELECT * FROM t1;
+
+  no rows selected
+
+
+
+  BEGIN
+    INSERT INTO t1 VALUES(1000);
+    DBMS_OUTPUT.PUT_LINE(100/0);
+    INSERT INTO t1 VALUES(2000);
+  EXCEPTION
+    WHEN ZERO_DIVIDE THEN
+         DBMS_OUTPUT.PUT_LINE('0 으로 나눌수 없음!');
+  END;
+  /
+  0 으로 나눌수 없음!
+
+  PL/SQL procedure successfully completed.
+
+  SQL> SELECT * FROM t1;
+
+         A
+ ----------
+        1000
+
+  SQL> ROLLBACK;
+
+  SQL> SELECT * FROM t1;
+
+       no rows selected
+
+  DBMS_OUTPUT.PUT_LINE(100/0); --- 이것에 관계없이 
+    
+  INSERT INTO t1 VALUES(2000); ----이것은 무조건 해야 한다면?
+
+
+
+
+  BEGIN
+    INSERT INTO t1 VALUES(1000);
+    BEGIN
+       DBMS_OUTPUT.PUT_LINE(100/0);
+    EXCEPTION
+      WHEN ZERO_DIVIDE THEN
+           DBMS_OUTPUT.PUT_LINE('0 으로 나눌수 없음!');
+    END;
+    INSERT INTO t1 VALUES(2000);
+  END;
+  /
+
+
+
+
+
+
+
+
+
+
 
 
 
